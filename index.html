@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todo System</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2>My Lists</h2>
+            </div>
+            <div class="sidebar-content" id="sidebarContent">
+                <!-- Boards and projects will be rendered here -->
+            </div>
+            <div class="sidebar-footer">
+                <button id="newBoardBtn" class="new-item-btn">
+                    <i class="fas fa-plus"></i> New List
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="content-header">
+                <h1 id="currentContext">Select a project</h1>
+            </div>
+            <div class="content-body">
+                <div class="new-task-container">
+                    <input type="text" id="newTaskInput" placeholder="Add a task">
+                    <button id="addTaskBtn"><i class="fas fa-plus"></i></button>
+                </div>
+                <div id="tasksList" class="tasks-list">
+                    <!-- Tasks will be rendered here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Context Menu -->
+    <div id="contextMenu" class="context-menu">
+        <ul>
+            <li id="newProjectOption">New Project</li>
+            <li id="deleteOption">Delete</li>
+        </ul>
+    </div>
+
+    <script src="static/js/main.js"></script>
+</body>
+</html>

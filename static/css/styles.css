@@ -1,0 +1,198 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f5f5f5;
+}
+
+.app-container {
+    display: flex;
+    height: 100vh;
+}
+
+/* Sidebar Styles */
+.sidebar {
+    width: 300px;
+    background: white;
+    border-right: 1px solid #e0e0e0;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-header {
+    padding: 20px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.sidebar-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+}
+
+.sidebar-footer {
+    padding: 15px;
+    border-top: 1px solid #e0e0e0;
+}
+
+.new-item-btn {
+    width: 100%;
+    padding: 10px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    color: #666;
+}
+
+.new-item-btn:hover {
+    background: #f0f0f0;
+}
+
+/* Main Content Styles */
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+}
+
+.content-header {
+    padding: 20px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.content-body {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+/* Task Styles */
+.new-task-container {
+    display: flex;
+    margin-bottom: 20px;
+    gap: 10px;
+}
+
+#newTaskInput {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+}
+
+/* Tree View Styles */
+.tree-item {
+    padding: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.tree-item:hover {
+    background: #f0f0f0;
+}
+
+.tree-item.selected {
+    background: #e1efff;
+}
+
+.tree-item i {
+    width: 20px;
+}
+
+/* Context Menu */
+.context-menu {
+    position: fixed;
+    background: white;
+    border: 1px solid #e0e0e0;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    display: none;
+    z-index: 1000;
+}
+
+.context-menu ul {
+    list-style: none;
+}
+
+.context-menu li {
+    padding: 8px 15px;
+    cursor: pointer;
+}
+
+.context-menu li:hover {
+    background: #f0f0f0;
+}
+
+/* Task Item Styles */
+.task-item {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    border-bottom: 1px solid #e0e0e0;
+    gap: 10px;
+}
+
+.task-item:hover {
+    background: #f8f9fa;
+}
+
+.task-item.completed .task-text {
+    text-decoration: line-through;
+    color: #888;
+}
+
+.checkbox-container {
+    position: relative;
+    padding-left: 35px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.checkmark {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 20px;
+    width: 20px;
+    background-color: #fff;
+    border: 2px solid #ddd;
+    border-radius: 4px;
+}
+
+.checkbox-container input:checked ~ .checkmark {
+    background-color: #2196F3;
+    border-color: #2196F3;
+}
+
+.delete-btn {
+    margin-left: auto;
+    background: transparent;
+    border: none;
+    color: #dc3545;
+    cursor: pointer;
+    opacity: 0;
+}
+
+.task-item:hover .delete-btn {
+    opacity: 1;
+}
+
+/* Tree View Animations */
+.fa-chevron-right {
+    transition: transform 0.2s;
+}
+
+.fa-chevron-right.fa-chevron-down {
+    transform: rotate(90deg);
+}
+
+.projects-container {
+    margin-left: 20px;
+}

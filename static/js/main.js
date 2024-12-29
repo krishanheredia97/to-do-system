@@ -56,21 +56,46 @@ class TodoApp {
         }
     }
 
-    async createNewBoard() {
-        const boardName = prompt('Enter board name:');
-        if (!boardName) return;
-
-        try {
-            const response = await fetch(`${API_BASE_URL}/boards/`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: boardName, settings: {} })
-            });
-            const newBoard = await response.json();
-            this.loadBoards(); // Reload all boards
-        } catch (error) {
-            console.error('Error creating board:', error);
-        }
+    createNewBoard() {
+        // Create a new board item with an editable input
+        const boardDiv = document.createElement('div');
+        boardDiv.className = 'tree-item board-item';
+        
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'inline-edit';
+        input.placeholder = 'Enter board name';
+        
+        boardDiv.innerHTML = `
+            <i class="fas fa-chevron-right"></i>
+            <i class="fas fa-list"></i>
+        `;
+        boardDiv.appendChild(input);
+        this.sidebarContent.appendChild(boardDiv);
+        
+        input.focus();
+        
+        input.addEventListener('keypress', async (e) => {
+            if (e.key === 'Enter' && input.value.trim()) {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/boards/`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name: input.value.trim(), settings: {} })
+                    });
+                    const newBoard = await response.json();
+                    this.loadBoards();
+                } catch (error) {
+                    console.error('Error creating board:', error);
+                }
+            }
+        });
+        
+        input.addEventListener('blur', () => {
+            if (!input.value.trim()) {
+                boardDiv.remove();
+            }
+        });
     }
 
     async createNewProject() {
@@ -139,6 +164,7 @@ class TodoApp {
     createBoardElement(board) {
         const boardDiv = document.createElement('div');
         boardDiv.className = 'tree-item board-item';
+        boardDiv.setAttribute('data-board-id', board.id);
         
         // Create board header
         const boardHeader = document.createElement('div');
@@ -182,6 +208,7 @@ class TodoApp {
     createProjectElement(project) {
         const projectDiv = document.createElement('div');
         projectDiv.className = 'tree-item project-item';
+        projectDiv.setAttribute('data-project-id', project.id);
         projectDiv.innerHTML = `
             <i class="fas fa-folder"></i>
             <span>${project.name}</span>
@@ -274,48 +301,72 @@ class TodoApp {
         }
     }
 
-    async renameItem() {
+    renameItem() {
         if (!this.contextMenuTarget) return;
         
-        const newName = prompt('Enter new name:');
-        if (!newName) return;
-
-        try {
-            const endpoint = this.contextMenuType === 'board' 
-                ? `${API_BASE_URL}/boards/${this.contextMenuTarget.id}`
-                : `${API_BASE_URL}/projects/${this.contextMenuTarget.id}`;
-
-            await fetch(endpoint, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: newName })
-            });
-
-            this.loadBoards();
-        } catch (error) {
-            console.error('Error renaming item:', error);
-        }
+        const itemElement = this.contextMenuType === 'board' 
+            ? document.querySelector(`[data-board-id="${this.contextMenuTarget.id}"]`)
+            : document.querySelector(`[data-project-id="${this.contextMenuTarget.id}"]`);
+        
+        const nameSpan = itemElement.querySelector('span');
+        const currentName = nameSpan.textContent;
+        
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'inline-edit';
+        input.value = currentName;
+        
+        nameSpan.replaceWith(input);
+        input.focus();
+        
+        input.addEventListener('keypress', async (e) => {
+            if (e.key === 'Enter' && input.value.trim()) {
+                try {
+                    const endpoint = this.contextMenuType === 'board' 
+                        ? `${API_BASE_URL}/boards/${this.contextMenuTarget.id}`
+                        : `${API_BASE_URL}/projects/${this.contextMenuTarget.id}`;
+                    
+                    await fetch(endpoint, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name: input.value.trim() })
+                    });
+                    
+                    this.loadBoards();
+                } catch (error) {
+                    console.error('Error renaming item:', error);
+                }
+            }
+        });
+        
+        input.addEventListener('blur', () => {
+            input.replaceWith(nameSpan);
+        });
+        
         this.hideContextMenu();
     }
 
     async deleteItem() {
         if (!this.contextMenuTarget) return;
-
-        if (!confirm('Are you sure you want to delete this item?')) return;
-
+        
         try {
             const endpoint = this.contextMenuType === 'board' 
                 ? `${API_BASE_URL}/boards/${this.contextMenuTarget.id}`
                 : `${API_BASE_URL}/projects/${this.contextMenuTarget.id}`;
-
-            await fetch(endpoint, {
+            
+            const response = await fetch(endpoint, {
                 method: 'DELETE'
             });
-
-            this.loadBoards();
+            
+            if (response.ok) {
+                this.loadBoards();
+            } else {
+                console.error('Error deleting item:', await response.text());
+            }
         } catch (error) {
             console.error('Error deleting item:', error);
         }
+        
         this.hideContextMenu();
     }
 

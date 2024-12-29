@@ -321,3 +321,23 @@ body {
     opacity: 1;
 }
 
+.inline-edit {
+    border: none;
+    border-bottom: 1px solid #ccc;
+    background: transparent;
+    font-size: inherit;
+    padding: 2px 4px;
+    margin: 0;
+    width: 150px;
+}
+
+.inline-edit:focus {
+    outline: none;
+    border-bottom-color: #2196F3;
+}
+
+/* Add data attributes to board and project elements */
+[data-board-id],
+[data-project-id] {
+    position: relative;
+}

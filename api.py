@@ -242,6 +242,15 @@ def delete_project(project_id: int, db: Session = Depends(get_db)):
     db.commit()
     return {"status": "success"}
 
+@app.delete("/tasks/{task_id}")
+def delete_task(task_id: int, db: Session = Depends(get_db)):
+    task = db.query(Task).filter(Task.id == task_id).first()
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    db.delete(task)
+    db.commit()
+    return {"status": "success"}
+
 @app.put("/boards/{board_id}")
 def update_board(board_id: int, board: BoardCreate, db: Session = Depends(get_db)):
     db_board = db.query(Board).filter(Board.id == board_id).first()

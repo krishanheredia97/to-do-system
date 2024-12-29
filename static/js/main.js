@@ -139,15 +139,34 @@ class TodoApp {
     createBoardElement(board) {
         const boardDiv = document.createElement('div');
         boardDiv.className = 'tree-item board-item';
-        boardDiv.innerHTML = `
-            <div class="board-header">
-                <i class="fas fa-list"></i>
-                <span>${board.name}</span>
-            </div>
+        
+        // Create board header
+        const boardHeader = document.createElement('div');
+        boardHeader.className = 'board-header';
+        boardHeader.innerHTML = `
+            <i class="fas fa-chevron-right"></i>
+            <i class="fas fa-list"></i>
+            <span>${board.name}</span>
         `;
-
+        
+        // Add context menu to board header
+        boardHeader.addEventListener('contextmenu', (e) => {
+            this.showContextMenu(e, 'board', board);
+        });
+        
+        boardDiv.appendChild(boardHeader);
+    
+        // Create projects container
         const projectsContainer = document.createElement('div');
         projectsContainer.className = 'projects-container';
+        projectsContainer.style.display = 'none'; // Hidden by default
+        
+        // Toggle projects visibility
+        boardHeader.addEventListener('click', () => {
+            const chevron = boardHeader.querySelector('.fa-chevron-right');
+            chevron.classList.toggle('fa-chevron-down');
+            projectsContainer.style.display = projectsContainer.style.display === 'none' ? 'block' : 'none';
+        });
         
         if (board.projects && board.projects.length > 0) {
             board.projects.forEach(project => {
@@ -157,12 +176,6 @@ class TodoApp {
         }
         
         boardDiv.appendChild(projectsContainer);
-
-        boardDiv.querySelector('.board-header').addEventListener('contextmenu', (e) => {
-            e.preventDefault();
-            this.showContextMenu(e, 'board', board);
-        });
-
         return boardDiv;
     }
 
@@ -173,9 +186,9 @@ class TodoApp {
             <i class="fas fa-folder"></i>
             <span>${project.name}</span>
         `;
-
-        projectDiv.addEventListener('click', () => {
-            // Remove previous selection
+    
+        projectDiv.addEventListener('click', (e) => {
+            e.stopPropagation();
             document.querySelectorAll('.tree-item').forEach(item => item.classList.remove('selected'));
             projectDiv.classList.add('selected');
             
@@ -183,43 +196,59 @@ class TodoApp {
             this.currentContext.textContent = project.name;
             this.loadTasks(project.id);
         });
-
+    
         projectDiv.addEventListener('contextmenu', (e) => {
-            e.preventDefault();
             this.showContextMenu(e, 'project', project);
         });
-
+    
         return projectDiv;
     }
 
     renderTasks(tasks) {
         this.tasksList.innerHTML = '';
+        
+        // Create containers for incomplete and complete tasks
+        const incompleteContainer = document.createElement('div');
+        incompleteContainer.className = 'tasks-section incomplete-tasks';
+        
+        const completeContainer = document.createElement('div');
+        completeContainer.className = 'tasks-section complete-tasks';
+        completeContainer.innerHTML = '<h3>Completed Tasks</h3>';
+        
+        // Sort tasks into appropriate containers
         tasks.forEach(task => {
             const taskElement = this.createTaskElement(task);
-            this.tasksList.appendChild(taskElement);
+            if (task.is_completed) {
+                completeContainer.appendChild(taskElement);
+            } else {
+                incompleteContainer.appendChild(taskElement);
+            }
         });
+        
+        // Add containers to the task list
+        this.tasksList.appendChild(incompleteContainer);
+        this.tasksList.appendChild(completeContainer);
     }
 
     createTaskElement(task) {
         const taskDiv = document.createElement('div');
         taskDiv.className = `task-item ${task.is_completed ? 'completed' : ''}`;
         taskDiv.innerHTML = `
-            <label class="checkbox-container">
-                <input type="checkbox" ${task.is_completed ? 'checked' : ''}>
-                <span class="checkmark"></span>
-            </label>
+            <div class="task-checkbox">
+                <div class="circle-checkbox ${task.is_completed ? 'checked' : ''}"></div>
+            </div>
             <span class="task-text">${task.user_input}</span>
             <button class="delete-btn"><i class="fas fa-trash"></i></button>
         `;
-
+    
         // Handle task completion
-        const checkbox = taskDiv.querySelector('input[type="checkbox"]');
-        checkbox.addEventListener('change', () => this.toggleTaskCompletion(task.id, checkbox.checked));
-
+        const checkbox = taskDiv.querySelector('.circle-checkbox');
+        checkbox.addEventListener('click', () => this.toggleTaskCompletion(task.id, !task.is_completed));
+    
         // Handle task deletion
         const deleteBtn = taskDiv.querySelector('.delete-btn');
         deleteBtn.addEventListener('click', () => this.deleteTask(task.id));
-
+    
         return taskDiv;
     }
 
@@ -290,9 +319,18 @@ class TodoApp {
         this.hideContextMenu();
     }
 
-    showContextMenu(e, boardId) {
+    showContextMenu(e, type, item) {
+        e.preventDefault();
+        e.stopPropagation();
+        
         this.contextMenuTarget = item;
         this.contextMenuType = type;
+        this.currentBoardId = type === 'board' ? item.id : item.board_id;
+        
+        // Show/hide appropriate menu items
+        const newProjectOption = document.getElementById('newProjectOption');
+        newProjectOption.style.display = type === 'board' ? 'block' : 'none';
+        
         this.contextMenu.style.display = 'block';
         this.contextMenu.style.left = `${e.pageX}px`;
         this.contextMenu.style.top = `${e.pageY}px`;

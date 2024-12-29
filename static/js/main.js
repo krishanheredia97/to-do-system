@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:8000/api';
+const API_BASE_URL = 'http://127.0.0.1:8000/api';
 
 class TodoApp {
     constructor() {
@@ -30,6 +30,7 @@ class TodoApp {
         document.addEventListener('click', () => this.hideContextMenu());
         document.getElementById('newProjectOption').addEventListener('click', () => this.createNewProject());
         document.getElementById('deleteOption').addEventListener('click', () => this.deleteItem());
+        document.getElementById('renameOption').addEventListener('click', () => this.renameItem());
 
         // Task creation
         this.addTaskBtn.addEventListener('click', () => this.createNewTask());
@@ -42,6 +43,13 @@ class TodoApp {
         try {
             const response = await fetch(`${API_BASE_URL}/boards/`);
             const boards = await response.json();
+            
+            // Also fetch projects for each board
+            for (let board of boards) {
+                const projectsResponse = await fetch(`${API_BASE_URL}/projects/?board_id=${board.id}`);
+                board.projects = await projectsResponse.json();
+            }
+            
             this.renderBoards(boards);
         } catch (error) {
             console.error('Error loading boards:', error);
@@ -132,25 +140,28 @@ class TodoApp {
         const boardDiv = document.createElement('div');
         boardDiv.className = 'tree-item board-item';
         boardDiv.innerHTML = `
-            <i class="fas fa-list"></i>
-            <span>${board.name}</span>
+            <div class="board-header">
+                <i class="fas fa-list"></i>
+                <span>${board.name}</span>
+            </div>
         `;
 
-        boardDiv.addEventListener('contextmenu', (e) => {
-            e.preventDefault();
-            this.showContextMenu(e, board.id);
-        });
-
-        // Add projects if they exist
+        const projectsContainer = document.createElement('div');
+        projectsContainer.className = 'projects-container';
+        
         if (board.projects && board.projects.length > 0) {
-            const projectsContainer = document.createElement('div');
-            projectsContainer.className = 'projects-container';
             board.projects.forEach(project => {
                 const projectElement = this.createProjectElement(project);
                 projectsContainer.appendChild(projectElement);
             });
-            boardDiv.appendChild(projectsContainer);
         }
+        
+        boardDiv.appendChild(projectsContainer);
+
+        boardDiv.querySelector('.board-header').addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            this.showContextMenu(e, 'board', board);
+        });
 
         return boardDiv;
     }
@@ -164,9 +175,18 @@ class TodoApp {
         `;
 
         projectDiv.addEventListener('click', () => {
+            // Remove previous selection
+            document.querySelectorAll('.tree-item').forEach(item => item.classList.remove('selected'));
+            projectDiv.classList.add('selected');
+            
             this.currentProjectId = project.id;
             this.currentContext.textContent = project.name;
             this.loadTasks(project.id);
+        });
+
+        projectDiv.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            this.showContextMenu(e, 'project', project);
         });
 
         return projectDiv;
@@ -182,17 +202,97 @@ class TodoApp {
 
     createTaskElement(task) {
         const taskDiv = document.createElement('div');
-        taskDiv.className = 'task-item';
+        taskDiv.className = `task-item ${task.is_completed ? 'completed' : ''}`;
         taskDiv.innerHTML = `
-            <span>${task.user_input}</span>
+            <label class="checkbox-container">
+                <input type="checkbox" ${task.is_completed ? 'checked' : ''}>
+                <span class="checkmark"></span>
+            </label>
+            <span class="task-text">${task.user_input}</span>
             <button class="delete-btn"><i class="fas fa-trash"></i></button>
         `;
+
+        // Handle task completion
+        const checkbox = taskDiv.querySelector('input[type="checkbox"]');
+        checkbox.addEventListener('change', () => this.toggleTaskCompletion(task.id, checkbox.checked));
+
+        // Handle task deletion
+        const deleteBtn = taskDiv.querySelector('.delete-btn');
+        deleteBtn.addEventListener('click', () => this.deleteTask(task.id));
+
         return taskDiv;
     }
 
+    async toggleTaskCompletion(taskId, completed) {
+        try {
+            await fetch(`${API_BASE_URL}/tasks/${taskId}/complete`, {
+                method: 'PUT'
+            });
+            this.loadTasks(this.currentProjectId);
+        } catch (error) {
+            console.error('Error updating task:', error);
+        }
+    }
+
+    async deleteTask(taskId) {
+        try {
+            await fetch(`${API_BASE_URL}/tasks/${taskId}`, {
+                method: 'DELETE'
+            });
+            this.loadTasks(this.currentProjectId);
+        } catch (error) {
+            console.error('Error deleting task:', error);
+        }
+    }
+
+    async renameItem() {
+        if (!this.contextMenuTarget) return;
+        
+        const newName = prompt('Enter new name:');
+        if (!newName) return;
+
+        try {
+            const endpoint = this.contextMenuType === 'board' 
+                ? `${API_BASE_URL}/boards/${this.contextMenuTarget.id}`
+                : `${API_BASE_URL}/projects/${this.contextMenuTarget.id}`;
+
+            await fetch(endpoint, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: newName })
+            });
+
+            this.loadBoards();
+        } catch (error) {
+            console.error('Error renaming item:', error);
+        }
+        this.hideContextMenu();
+    }
+
+    async deleteItem() {
+        if (!this.contextMenuTarget) return;
+
+        if (!confirm('Are you sure you want to delete this item?')) return;
+
+        try {
+            const endpoint = this.contextMenuType === 'board' 
+                ? `${API_BASE_URL}/boards/${this.contextMenuTarget.id}`
+                : `${API_BASE_URL}/projects/${this.contextMenuTarget.id}`;
+
+            await fetch(endpoint, {
+                method: 'DELETE'
+            });
+
+            this.loadBoards();
+        } catch (error) {
+            console.error('Error deleting item:', error);
+        }
+        this.hideContextMenu();
+    }
+
     showContextMenu(e, boardId) {
-        this.contextMenuTarget = e.target;
-        this.currentBoardId = boardId;
+        this.contextMenuTarget = item;
+        this.contextMenuType = type;
         this.contextMenu.style.display = 'block';
         this.contextMenu.style.left = `${e.pageX}px`;
         this.contextMenu.style.top = `${e.pageY}px`;

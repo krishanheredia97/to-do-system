@@ -6,20 +6,24 @@ from fastapi.responses import FileResponse
 from api import app as api_app
 from db import init_db, test_connection
 import logging
+import os
 
 # Create main FastAPI app
 app = FastAPI()
+
+# Get the absolute path to the project directory
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # Mount the API under /api prefix
 app.mount("/api", api_app)
 
 # Mount static files
-app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
 
 # Serve index.html at root
 @app.get("/")
 async def read_root():
-    return FileResponse('index.html')
+    return FileResponse(os.path.join(BASE_DIR, 'index.html'))
 
 if __name__ == "__main__":
     # Setup logging
@@ -38,4 +42,4 @@ if __name__ == "__main__":
     
     # Run the application
     logger.info("Starting application...")
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)

@@ -195,4 +195,44 @@ body {
 
 .projects-container {
     margin-left: 20px;
+    border-left: 1px solid #e0e0e0;
+    padding-left: 10px;
+}
+
+.task-item {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.checkbox-container {
+    position: relative;
+    padding-left: 25px;
+    margin-right: 10px;
+    cursor: pointer;
+}
+
+.checkmark {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 18px;
+    width: 18px;
+    border: 2px solid #ccc;
+    border-radius: 50%;
+}
+
+.checkbox-container input:checked ~ .checkmark {
+    background-color: #2196F3;
+    border-color: #2196F3;
+}
+
+.task-item.completed .task-text {
+    text-decoration: line-through;
+    color: #888;
+}
+
+.tree-item.selected {
+    background-color: #e1efff;
 }

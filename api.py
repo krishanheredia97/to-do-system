@@ -98,7 +98,7 @@ app = FastAPI(title="Todo System API")
 # Update CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://127.0.0.1:5500", "http://localhost:5500", "http://localhost:8000"],
+    allow_origins=["http://127.0.0.1:8000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -223,3 +223,41 @@ def get_notes(project_id: Optional[int] = None, skip: int = 0, limit: int = 100,
     if project_id:
         query = query.filter(Note.project_id == project_id)
     return query.offset(skip).limit(limit).all()
+
+@app.delete("/boards/{board_id}")
+def delete_board(board_id: int, db: Session = Depends(get_db)):
+    board = db.query(Board).filter(Board.id == board_id).first()
+    if not board:
+        raise HTTPException(status_code=404, detail="Board not found")
+    db.delete(board)
+    db.commit()
+    return {"status": "success"}
+
+@app.delete("/projects/{project_id}")
+def delete_project(project_id: int, db: Session = Depends(get_db)):
+    project = db.query(Project).filter(Project.id == project_id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    db.delete(project)
+    db.commit()
+    return {"status": "success"}
+
+@app.put("/boards/{board_id}")
+def update_board(board_id: int, board: BoardCreate, db: Session = Depends(get_db)):
+    db_board = db.query(Board).filter(Board.id == board_id).first()
+    if not db_board:
+        raise HTTPException(status_code=404, detail="Board not found")
+    for key, value in board.dict().items():
+        setattr(db_board, key, value)
+    db.commit()
+    return db_board
+
+@app.put("/projects/{project_id}")
+def update_project(project_id: int, project: ProjectCreate, db: Session = Depends(get_db)):
+    db_project = db.query(Project).filter(Project.id == project_id).first()
+    if not db_project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    for key, value in project.dict().items():
+        setattr(db_project, key, value)
+    db.commit()
+    return db_project

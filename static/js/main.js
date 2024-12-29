@@ -29,7 +29,12 @@ class TodoApp {
         // Context menu
         document.addEventListener('click', () => this.hideContextMenu());
         document.getElementById('newProjectOption').addEventListener('click', () => this.createNewProject());
-        document.getElementById('deleteOption').addEventListener('click', () => this.deleteItem());
+        document.getElementById('deleteOption').addEventListener('click', async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('Delete clicked', this.contextMenuTarget, this.contextMenuType);
+            await this.deleteItem();
+        });
         document.getElementById('renameOption').addEventListener('click', () => this.renameItem());
 
         // Task creation
@@ -177,6 +182,7 @@ class TodoApp {
         
         // Add context menu to board header
         boardHeader.addEventListener('contextmenu', (e) => {
+            console.log('Opening context menu for board:', board); // Debug log
             this.showContextMenu(e, 'board', board);
         });
         
@@ -225,6 +231,7 @@ class TodoApp {
         });
     
         projectDiv.addEventListener('contextmenu', (e) => {
+            console.log('Opening context menu for project:', project); // Debug log
             this.showContextMenu(e, 'project', project);
         });
     
@@ -347,32 +354,51 @@ class TodoApp {
     }
 
     async deleteItem() {
-        if (!this.contextMenuTarget) return;
+        console.log('Starting delete operation...'); // Debug log
+        
+        if (!this.contextMenuTarget) {
+            console.error('No context menu target found');
+            return;
+        }
         
         try {
             const endpoint = this.contextMenuType === 'board' 
                 ? `${API_BASE_URL}/boards/${this.contextMenuTarget.id}`
                 : `${API_BASE_URL}/projects/${this.contextMenuTarget.id}`;
-            
+                
+            console.log('Sending DELETE request to:', endpoint); // Debug log
+                
             const response = await fetch(endpoint, {
-                method: 'DELETE'
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                credentials: 'include'  // Add this line
             });
-            
+                
+            console.log('Delete response status:', response.status); // Debug log
+                
             if (response.ok) {
-                this.loadBoards();
+                console.log('Delete successful, reloading boards...'); // Debug log
+                await this.loadBoards();
             } else {
-                console.error('Error deleting item:', await response.text());
+                const errorText = await response.text();
+                console.error('Server error during delete:', errorText);
+                throw new Error(`Delete failed: ${errorText}`);
             }
         } catch (error) {
-            console.error('Error deleting item:', error);
+            console.error('Error during delete operation:', error);
+        } finally {
+            this.hideContextMenu();
         }
-        
-        this.hideContextMenu();
     }
 
     showContextMenu(e, type, item) {
         e.preventDefault();
         e.stopPropagation();
+        
+        console.log('Context menu opened for:', type, item); // Debug log
         
         this.contextMenuTarget = item;
         this.contextMenuType = type;
@@ -392,10 +418,6 @@ class TodoApp {
         this.contextMenuTarget = null;
     }
 
-    deleteItem() {
-        // Implement deletion logic here
-        this.hideContextMenu();
-    }
 }
 
 // Initialize the app

@@ -100,7 +100,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://127.0.0.1:8000"],
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["*"],
 )
 
@@ -226,21 +226,37 @@ def get_notes(project_id: Optional[int] = None, skip: int = 0, limit: int = 100,
 
 @app.delete("/boards/{board_id}")
 def delete_board(board_id: int, db: Session = Depends(get_db)):
+    logger.debug(f"Attempting to delete board with ID: {board_id}")
     board = db.query(Board).filter(Board.id == board_id).first()
     if not board:
+        logger.error(f"Board with ID {board_id} not found")
         raise HTTPException(status_code=404, detail="Board not found")
-    db.delete(board)
-    db.commit()
-    return {"status": "success"}
+    try:
+        db.delete(board)
+        db.commit()
+        logger.debug(f"Successfully deleted board with ID: {board_id}")
+        return {"status": "success"}
+    except Exception as e:
+        logger.error(f"Error deleting board: {str(e)}")
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.delete("/projects/{project_id}")
 def delete_project(project_id: int, db: Session = Depends(get_db)):
+    logger.debug(f"Attempting to delete project with ID: {project_id}")
     project = db.query(Project).filter(Project.id == project_id).first()
     if not project:
+        logger.error(f"Project with ID {project_id} not found")
         raise HTTPException(status_code=404, detail="Project not found")
-    db.delete(project)
-    db.commit()
-    return {"status": "success"}
+    try:
+        db.delete(project)
+        db.commit()
+        logger.debug(f"Successfully deleted project with ID: {project_id}")
+        return {"status": "success"}
+    except Exception as e:
+        logger.error(f"Error deleting project: {str(e)}")
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.delete("/tasks/{task_id}")
 def delete_task(task_id: int, db: Session = Depends(get_db)):
